@@ -1,11 +1,34 @@
-from pydantic import BaseModel,ConfigDict, AfterValidator, Field, ValidationError, field_validator, model_validator
-from typing import Annotated,List
-from datetime import datetime,timezone,date
-def verify_age(age: int )->int:
-    if age<18 or age>100:
+from __future__ import annotations
+
+from datetime import date
+from typing import Self
+
+from pydantic import BaseModel, model_validator
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+def verify_age(age: int) -> int:
+    if age < 18 or age > 100:
         raise ValueError("Age must be between 18 and 100")
     return age
-class User(BaseModel):
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    email: Mapped[str] = mapped_column(unique=True)
+    age: Mapped[int | None]
+    hashed_password: Mapped[str]
+    role: Mapped[str] = mapped_column(default="user")
+
+
+"""class User(BaseModel):
     id : int
     name: str
     email: str
@@ -19,31 +42,35 @@ class User(BaseModel):
 
     age : Annotated[int, AfterValidator(verify_age)]
     created_at : datetime = Field(default_factory= lambda : datetime.now(timezone.utc))
-    addresses : List[Address]
+    addresses : List[Address]"""
+
+
 class Optional(BaseModel):
     id: int
-    name: str='Jane Doe'
+    name: str = "Jane Doe"
     # id is non optional which means the Model will raise a Validation Error
     # name will not raise any error, instead it will use the default given during Model creation
 
 
 class Event(BaseModel):
-    start_date : date
-    end_date : date
-    @model_validator(mode='after')
-    def event_validator(self)-> 'Event':
-        if self.start_date>self.end_date:
+    start_date: date
+    end_date: date
+
+    @model_validator(mode="after")
+    def event_validator(self) -> Self:
+        if self.start_date > self.end_date:
             raise ValueError("End date before Start Date. Not valid")
         return self
 
+
 class Address(BaseModel):
-    street : str
-    city : str
-    postcode : int
+    street: str
+    city: str
+    postcode: int
 
 
 # ------------- OUTPUTS ----------------------
-
+"""
 # Valid User Data
 try:
     valid_user=User(
@@ -123,3 +150,4 @@ user1 = User(
 )
 
 print(user)
+"""
