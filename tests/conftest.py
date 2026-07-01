@@ -6,10 +6,10 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from app.config import TEST_DATABASE_URL
-from app.database import get_db
-from app.main import app
-from app.models import Base
+from week4.app.config import TEST_DATABASE_URL
+from week4.app.database import get_db
+from week4.app.main import app
+from week4.app.models import Base
 
 pytestmark = pytest.mark.asyncio
 test_engine = create_async_engine(
