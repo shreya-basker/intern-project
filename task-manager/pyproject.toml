@@ -1,5 +1,5 @@
 [project]
-name = "intern-project"
+name = "task-manager"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -51,8 +51,3 @@ select = ["E", "F", "I", "UP"]
 python_version = "3.11"
 disallow_untyped_defs = true
 ignore_missing_imports = true
-
-[tool.uv.workspace]
-members = [
-    "task-manager",
-]
