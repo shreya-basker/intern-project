@@ -107,3 +107,32 @@ class AuditLogResponse(BaseModel):
     resource_id: int
     user_name: str
     timestamp: datetime | None
+
+
+class ErrorLogResponse(BaseModel):
+    id: int
+    timestamp: datetime | None
+    endpoint: str
+    http_method: str
+    user_id: int | None
+    exception_type: str
+    error_message: str
+    stack_trace: str
+    analysis_time: datetime | None
+    root_cause: str | None
+    suggested_fix: str | None
+    llm_model: str | None
+    status: str
+
+    model_config = {"from_attributes": True}
+
+
+class ErrorLogSummary(BaseModel):
+    id: int
+    timestamp: datetime
+    endpoint: str
+    exception_type: str
+    status: str
+    root_cause: str | None
+    suggested_fix: str | None
+    model_config = {"from_attributes": True}

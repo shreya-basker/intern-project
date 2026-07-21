@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, Text, text
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -34,6 +34,7 @@ class User(Base):
     project_member: Mapped[list[ProjectMember]] = relationship(
         "ProjectMember", back_populates="user"
     )
+    error_logs: Mapped[list[ErrorLog]] = relationship("ErrorLog", back_populates="user")
 
 
 class Project(Base):
@@ -132,3 +133,48 @@ class AuditLog(Base):
     resource: Mapped[str]  # e.g. "post"
     resource_id: Mapped[int | None]
     timestamp: Mapped[datetime] = mapped_column(default=datetime.now)
+
+
+class ErrorLog(Base):
+    __tablename__ = "error_logs"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
+    endpoint: Mapped[str] = mapped_column(String(255))
+    http_method: Mapped[str] = mapped_column(String(10))
+    user_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    exception_type: Mapped[str] = mapped_column(String(100))
+    error_message: Mapped[str] = mapped_column(Text)
+    stack_trace: Mapped[str] = mapped_column(Text)
+    analysis_time: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+    root_cause: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    suggested_fix: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    llm_model: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+    status: Mapped[str] = mapped_column(
+        String(20),
+        default="pending",
+        nullable=False,
+    )
+    user: Mapped[User | None] = relationship(
+        "User",
+        back_populates="error_logs",
+    )
