@@ -1,39 +1,45 @@
-import asyncio
 from datetime import datetime
 
 from sqlalchemy import select
 
+from app.ai.service import GeminiService
 from app.database import AsyncSessionLocal
-from app.error_analysis.analyzer import analyze_error
 from app.models import ErrorLog
 
+service = GeminiService()
 
-async def detect_errors() -> None:
+
+async def process_errors(error_id: int) -> None:
     async with AsyncSessionLocal() as session:
-        result = await session.execute(select(ErrorLog).where(ErrorLog.status == "pending"))
+        result = await session.execute(select(ErrorLog).where(ErrorLog.id == error_id))
 
-        pending_errors = result.scalars().all()
+        error = result.scalar_one_or_none()
 
-        for error in pending_errors:
-            try:
-                analysis = await analyze_error(error)
+        if error is None:
+            print(f"Error with ID {error_id} not found.")
+            return
 
-                error.root_cause = analysis["root_cause"]
-                error.suggested_fix = analysis["suggested_fix"]
-                error.llm_model = analysis["llm_model"]
-                error.analysis_time = datetime.now()
-                error.status = "completed"
+        try:
+            error.status = "processing"
+            await session.commit()
 
-                await session.commit()
+            analysis = service.analyze(error)
 
-            except Exception as e:
-                await session.rollback()
-                if "429" in str(e):
-                    print("Gemini quota exceeded. Remaining errors will be processed later")
-                    break
-                print(f"Failed to analyze error {error.id}: {e}")
-                continue
+            error.summary = analysis.summary
+            error.root_cause = analysis.root_cause
+            error.suggested_fix = analysis.suggested_fix
+            error.severity = analysis.severity
+            error.confidence = analysis.confidence
+            error.analysis_time = datetime.now()
+            error.status = "completed"
+            error.llm_model = service.MODEL
 
+            await session.commit()
 
-if __name__ == "__main__":
-    asyncio.run(detect_errors())
+        except Exception:
+            await session.rollback()
+
+            error.status = "pending"
+            await session.commit()
+
+            raise

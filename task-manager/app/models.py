@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text, text
+from sqlalchemy import BigInteger, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -178,3 +178,20 @@ class ErrorLog(Base):
         "User",
         back_populates="error_logs",
     )
+    fingerprint: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    group_id: Mapped[int] = mapped_column(ForeignKey("error_groups.id"))
+    group: Mapped[ErrorGroup] = relationship(back_populates="error_logs")
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    severity: Mapped[str] = mapped_column(String(20), nullable=True)
+    confidence: Mapped[float] = mapped_column(Float, nullable=True)
+
+
+class ErrorGroup(Base):
+    __tablename__ = "error_groups"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    fingerprint: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    occurrences: Mapped[int] = mapped_column(default=1)
+    first_seen: Mapped[datetime] = mapped_column(default=datetime.now)
+    last_seen: Mapped[datetime] = mapped_column(default=datetime.now)
+    error_logs: Mapped[list[ErrorLog]] = relationship(back_populates="group")

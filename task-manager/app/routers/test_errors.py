@@ -3,9 +3,21 @@ from fastapi import APIRouter
 router = APIRouter(prefix="/test")
 
 
-@router.get("/test-error")
-async def test_error():
+def level3():
     raise ValueError("This is a test error")
+
+
+def level2():
+    level3()
+
+
+def level1():
+    level2()
+
+
+@router.get("/test/test-error")
+async def test_error():
+    level1()
 
 
 @router.get("/value-error")
@@ -45,3 +57,12 @@ def attribute_error():
 def file_error():
     with open("does_not_exist.txt") as f:
         return {"text": f.read()}
+
+
+def divide(a, b):
+    return a / b
+
+
+@router.get("/test/divide")
+async def test():
+    return divide(10, 0)
